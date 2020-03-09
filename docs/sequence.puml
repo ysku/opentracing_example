@@ -1,0 +1,35 @@
+@startuml
+title: asynchronous process using queue
+
+actor Entrant
+
+Entrant -> Gateway : upload file
+
+activate Gateway
+
+Gateway ->> Queue : send message
+
+activate Queue
+
+Gateway <<- Queue
+Entrant <<- Gateway
+
+deactivate Gateway
+
+Queue ->> Subscriber : subscribe
+
+deactivate Queue
+
+activate Subscriber
+
+Subscriber -> API : save
+
+activate API
+
+Subscriber <<- API
+
+deactivate API
+
+deactivate Subscriber
+
+@enduml
