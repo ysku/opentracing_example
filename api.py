@@ -6,6 +6,10 @@ from flask import Flask, request, jsonify
 import redis
 
 
+SERVICE_NAME = os.environ.get('SERVICE_NAME')
+ENV = os.environ.get('STAGE')
+
+
 class Message:
     def __init__(
             self,
