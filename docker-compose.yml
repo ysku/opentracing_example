@@ -1,0 +1,35 @@
+version: '3'
+services:
+  gateway:
+    image: opentracing_example:latest
+    environment:
+      API_PORT: 50001
+      REDIS_HOST: redis
+    command: bash -c +e "poetry run python api.py"
+    ports:
+      - 50001:50001
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+
+  subscriber:
+    image: opentracing_example:latest
+    command: bash -c +e "poetry run python subscriber.py"
+    environment:
+      API_HOST: api
+      API_PORT: 50002
+      REDIS_HOST: redis
+      PYTHONUNBUFFERED: x
+    depends_on:
+      - redis
+      - api
+
+  api:
+    image: opentracing_example:latest
+    command: bash -c +e "poetry run python api.py"
+    environment:
+      API_PORT: 50002
