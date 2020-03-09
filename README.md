@@ -16,3 +16,5 @@ $ curl -X POST localhost:50001/upload/[you name it]
 ```
 
 see stdout of docker containers
+
+open link http://localhost:16686 to see traces.

@@ -1,6 +1,7 @@
 version: '3'
 services:
   gateway:
+    container_name: gateway
     image: opentracing_example:latest
     environment:
       API_PORT: 50001
@@ -10,13 +11,16 @@ services:
       - 50001:50001
     depends_on:
       - redis
+      - jaeger
 
   redis:
+    container_name: redis
     image: redis:latest
     ports:
       - 6379:6379
 
   subscriber:
+    container_name: subscriber
     image: opentracing_example:latest
     command: bash -c +e "poetry run python subscriber.py"
     environment:
@@ -27,9 +31,20 @@ services:
     depends_on:
       - redis
       - api
+      - jaeger
 
   api:
+    container_name: api
     image: opentracing_example:latest
     command: bash -c +e "poetry run python api.py"
     environment:
       API_PORT: 50002
+    depends_on:
+      - jaeger
+
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:1.9
+    ports:
+      - 16686:16686
+      - 6831:6831/udp

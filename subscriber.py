@@ -6,7 +6,7 @@ import redis
 import requests
 
 
-LOOP_INTERVAL = int(os.environ('LOOP_INTERVAL') or 5)
+LOOP_INTERVAL = int(os.environ.get('LOOP_INTERVAL') or 5)
 API_HOST = os.environ.get('API_HOST') or 'localhost'
 API_PORT = os.environ.get('API_PORT') or '50002'
 
