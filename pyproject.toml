@@ -11,8 +11,11 @@ werkzeug = "0.16.1"
 redis = "^3.4.1"
 requests = "^2.23.0"
 ddtrace = {extras = ["opentracing"], version = "^0.34.0"}
+jaeger-client = "^4.3.0"
+opentracing-instrumentation = "^3.2.1"
 
 [tool.poetry.dev-dependencies]
+IPython = "^7.13.0"
 
 [build-system]
 requires = ["poetry>=0.12"]

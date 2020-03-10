@@ -1,65 +1,44 @@
-import json
 import os
 import time
 
-import redis
-import requests
+from opentracing.propagation import Format
 
+from app.api_client import APIClient
+from app.config import ENV
+from app.tracer import tracer
+from app.queue import Queue
 
-SERVICE_NAME = os.environ.get('SERVICE_NAME')
-ENV = os.environ.get('STAGE')
 LOOP_INTERVAL = int(os.environ.get('LOOP_INTERVAL') or 5)
 API_HOST = os.environ.get('API_HOST') or 'localhost'
 API_PORT = os.environ.get('API_PORT') or '50002'
 
 
-class APIClient:
-    def __init__(self):
-        self.base_url = f'http://{API_HOST}:{API_PORT}'
-
-    def save(self, body=None):
-        if body is None:
-            body = {}
-        res = requests.post(f'{self.base_url}/save', json=body)
-        res.raise_for_status()
-        return res.json()
-
-
 class Subscriber:
-    def __init__(self, r: redis.StrictRedis, client: APIClient):
-        self.redis = r
+    def __init__(self, q: Queue, client: APIClient):
+        self.queue = q
         self.client = client
 
     def subscribe(self):
         while True:
             try:
-                for key in self.__get_keys():
-                    data = self.__get(key)
-                    self.client.save({'id': key, **data})
+                for key in self.queue.peek_all_keys():
+                    value = self.queue.get(key)
+                    span_ctx = tracer.extract(Format.TEXT_MAP, value)
+                    with tracer.start_active_span('subscribe', child_of=span_ctx) as scope:
+                        scope.span.set_tag('env', ENV)
+                        print(f'subscriber: value = {value}')
+                        tracer.inject(scope.span, Format.HTTP_HEADERS, value)
+                        self.client.save(key, value)
             except Exception as e:
                 print(e)
             finally:
                 time.sleep(LOOP_INTERVAL)
 
-    def __get(self, key):
-        data = json.loads(self.redis.get(key).decode('utf-8'))
-        self.redis.delete(key)
-        return data
-
-    def __get_keys(self):
-        return [key.decode('utf-8') for key in self.redis.scan_iter()]
-
-    @classmethod
-    def create(cls):
-        pool = redis.ConnectionPool(
-            host=os.environ.get('REDIS_HOST') or 'localhost',
-            port=int(os.environ.get('REDIS_PORT') or '6379'),
-            db=0)
-        api_client = APIClient()
-        return cls(redis.StrictRedis(connection_pool=pool), api_client)
-
 
 if __name__ == '__main__':
+    queue = Queue.create()
+    api_client = APIClient(host=API_HOST, port=API_PORT)
+
     print(' === start subscriber === ')
-    subscriber = Subscriber.create()
+    subscriber = Subscriber(queue, api_client)
     subscriber.subscribe()

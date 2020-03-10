@@ -7,8 +7,7 @@ services:
       SERVICE_NAME: gateway
       API_PORT: 50001
       REDIS_HOST: redis
-#      AGENT_HOSTNAME: jaeger
-#      AGENT_PORT: 6831
+      JAEGER_AGENT_HOST: jaeger
     command: bash -c +e "poetry run python api.py"
     ports:
       - 50001:50001
@@ -27,13 +26,13 @@ services:
     image: opentracing_example:latest
     command: bash -c +e "poetry run python subscriber.py"
     environment:
+      PYTHONPATH: '.'
       SERVICE_NAME: subscriber
       API_HOST: api
       API_PORT: 50002
       REDIS_HOST: redis
       PYTHONUNBUFFERED: x
-#      AGENT_HOSTNAME: jaeger
-#      AGENT_PORT: 6831
+      JAEGER_AGENT_HOST: jaeger
     depends_on:
       - redis
       - api
@@ -46,8 +45,7 @@ services:
     environment:
       SERVICE_NAME: api
       API_PORT: 50002
-#      AGENT_HOSTNAME: jaeger
-#      AGENT_PORT: 6831
+      JAEGER_AGENT_HOST: jaeger
     depends_on:
       - jaeger
 
